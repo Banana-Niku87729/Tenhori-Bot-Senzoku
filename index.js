@@ -47,6 +47,40 @@ client.once("ready", () => {
   console.log(`✅ Logged in as ${client.user.tag}`);
 });
 
+async function updateChannelPermissions(guild) {
+  const allowedChannelIds = [
+    "1397039034437599243",
+    "1365650307249606666",
+    "1381607109204119704",
+    "1396875452441952319",
+    "1396874181878087821",
+    "1381601112951357475",
+  ];
+  const viewRoleId = "1396874755763732651"; // このロールにはすべて見せる
+
+  const everyoneRole = guild.roles.everyone;
+
+  for (const [channelId, channel] of guild.channels.cache) {
+    if (!channel.isTextBased()) continue;
+
+    const isAllowed = allowedChannelIds.includes(channelId);
+
+    try {
+      await channel.permissionOverwrites.edit(everyoneRole, {
+        ViewChannel: isAllowed,
+      });
+
+      await channel.permissionOverwrites.edit(viewRoleId, {
+        ViewChannel: true,
+      });
+
+      console.log(`✅ ${channel.name} のパーミッションを更新しました`);
+    } catch (err) {
+      console.error(`❌ ${channel.name} のパーミッション更新に失敗:`, err);
+    }
+  }
+}
+
 client.on("messageCreate", async (message) => {
   if (
     message.content === "!create_panel" &&
@@ -80,6 +114,15 @@ client.on("messageCreate", async (message) => {
 
     await message.channel.send({ embeds: [embed], components: rows });
   }
+
+  if (
+  message.content === "!update_permissions" &&
+  message.member.permissions.has(PermissionsBitField.Flags.Administrator)
+) {
+  await message.reply("🔄 パーミッションを更新中...");
+  await updateChannelPermissions(message.guild);
+  await message.reply("✅ 完了しました！");
+}
 });
 
 client.on("interactionCreate", async (interaction) => {
